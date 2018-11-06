@@ -17,6 +17,9 @@ class Chat extends React.Component {
   handleClick = () => {
     this.internalSetState(state => state, this.props.handleClick);
   };
+  handleReset = () => {
+    this.internalSetState(this.initialState);
+  };
 
   // Allow consumers of this component to update our state
   internalSetState(changes, callback) {
@@ -42,10 +45,17 @@ class Chat extends React.Component {
     className: "btn btn-funny",
     ...props
   });
+  getResetProps = ({ onClick, ...props }) => ({
+    onClick: callAll(onClick, this.handleReset),
+    type: "button",
+    className: "btn btn-reset",
+    ...props
+  });
   mapStateAndHelpers = () => {
     return {
-      cta: `Click this ${this.state.mood} Button`,
-      getButtonProps: this.getButtonProps
+      mood: this.state.mood,
+      getButtonProps: this.getButtonProps,
+      getResetProps: this.getResetProps
     };
   };
   render() {
@@ -58,8 +68,14 @@ class Chat extends React.Component {
 }
 
 class FunnyChat extends React.Component {
+  initialClickState = {
+    isCurious: false,
+    isHappy: false,
+    isSilly: false
+  };
   initialState = {
-    value: 0
+    value: 0,
+    ...this.initialClickState
   };
   state = this.initialState;
   handleClick = () => {
@@ -67,28 +83,89 @@ class FunnyChat extends React.Component {
       value: this.state.value + 1
     });
   };
+  handleHappyClick = () => {
+    this.setState(({ isHappy }) => ({
+      ...this.initialClickState,
+      isHappy: !isHappy
+    }));
+  };
+  handleCuriousClick = () => {
+    this.setState(({ isCurious }) => ({
+      ...this.initialClickState,
+      isCurious: !isCurious
+    }));
+  };
+  handleSillyClick = () => {
+    this.setState(({ isSilly }) => ({
+      ...this.initialClickState,
+      isSilly: !isSilly
+    }));
+  };
+  handleReset = () => {
+    this.setState(this.initialState);
+  };
 
-  // Use FunnyChat state to update Chat state
+  // A type of "hook" we can use to update Chat's internal state
   toggleStateReducer = (state, changes) => {
-    if (this.state.value > 5 && this.state.value < 10) {
+    if (this.state.isCurious) {
+      return { ...changes, mood: "Curious" };
+    } 
+    else if (this.state.isHappy) {
       return { ...changes, mood: "Happy" };
-    } else if (this.state.value > 10) {
+    } 
+    else if (this.state.isSilly) {
       return { ...changes, mood: "Silly" };
-    } else {
+    } 
+    else if (this.state.value > 5 && this.state.value < 10) {
+      return { ...changes, mood: "Happy" };
+    } 
+    else if (this.state.value > 10) {
+      return { ...changes, mood: "Silly" };
+    } 
+    else {
       return changes;
     }
   };
   render() {
     return (
-      <Chat stateReducer={this.toggleStateReducer} >
-        {({ cta, getButtonProps }) => (
+      <Chat stateReducer={this.toggleStateReducer}>
+        {({ mood, getButtonProps, getResetProps }) => (
           <div className="funny-chat">
             <button
               {...getButtonProps({
                 onClick: this.handleClick
               })}
             >
-              {`${cta} - ${this.state.value}`}
+              {`Click this ${mood} Button - ${this.state.value}`}
+            </button>
+            <hr />
+            <button
+              {...getButtonProps({
+                onClick: this.handleHappyClick
+              })}
+            >
+              Be Happy
+            </button>
+            <button
+              {...getButtonProps({
+                onClick: this.handleCuriousClick
+              })}
+            >
+              Be Curious
+            </button>
+            <button
+              {...getButtonProps({
+                onClick: this.handleSillyClick
+              })}
+            >
+              Be Silly
+            </button>
+            <button
+              {...getResetProps({
+                onClick: this.handleReset
+              })}
+            >
+              Start Over
             </button>
           </div>
         )}
